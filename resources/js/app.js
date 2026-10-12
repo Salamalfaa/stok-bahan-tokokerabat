@@ -93,6 +93,10 @@ function createQuantityButton(label, symbol, onClick) {
 }
 
 function renderCart() {
+	if (!cartItemsElement) {
+		return;
+	}
+
 	cartItemsElement.replaceChildren();
 
 	const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
@@ -276,7 +280,7 @@ document.querySelectorAll('[data-reservation-status-form]').forEach((form) => {
 
 document.addEventListener('keydown', (event) => {
 	if (event.key === 'Escape') {
-		if (cartDrawer.classList.contains('is-open')) {
+		if (cartDrawer?.classList.contains('is-open')) {
 			setDrawerOpen(false);
 			return;
 		}

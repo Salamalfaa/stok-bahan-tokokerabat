@@ -65,6 +65,59 @@
         </section>
     </div>
 
+    <div class="account-management-modal" id="accountManagementModal" hidden>
+        <section class="account-management-dialog" role="dialog" aria-modal="true" aria-labelledby="accountManagementTitle" aria-describedby="accountManagementDescription">
+            <header class="account-management-heading">
+                <div><p class="portal-eyebrow">Pengaturan akses</p><h2 id="accountManagementTitle">Kelola akun</h2><p id="accountManagementDescription"></p></div>
+                <button class="employment-history-close" id="accountManagementClose" type="button" aria-label="Tutup pengelolaan akun">&times;</button>
+            </header>
+            <div class="account-management-content">
+                <form class="account-management-role" id="accountRoleForm" method="post">
+                    @csrf
+                    @method('PATCH')
+                    <div><strong>Ubah peran</strong><span>Perbarui hak akses akun ini tanpa membuat akun baru.</span></div>
+                    <label class="portal-field"><span>Peran baru</span><select name="role" id="accountRoleSelect" required><option value="customer">Pelanggan</option><option value="operator">Operator / kasir</option><option value="owner">Pemilik</option><option value="admin">Administrator</option></select></label>
+                    <label class="portal-field" id="accountRoleNoteField" hidden><span>Catatan riwayat operator</span><textarea name="note" rows="2" maxlength="2000" placeholder="Catatan opsional perubahan peran"></textarea></label>
+                    <button class="portal-primary-button" type="submit">Simpan peran</button>
+                </form>
+                <section class="account-management-employment" id="accountManagementEmployment" hidden>
+                    <div><strong>Aksi kepegawaian</strong><span>Pemberhentian atau pengaktifan kembali operator memerlukan catatan wajib.</span></div>
+                    <form id="accountEmploymentForm" method="post">
+                        @csrf
+                        @method('PATCH')
+                        <label class="portal-field"><span id="accountEmploymentNoteLabel">Catatan wajib</span><textarea name="note" rows="2" maxlength="2000" required placeholder="Tuliskan alasan atau catatan dengan jelas"></textarea></label>
+                        <button class="portal-small-button" id="accountEmploymentButton" type="submit">Perbarui status</button>
+                    </form>
+                </section>
+                <form class="account-management-access" id="accountAccessForm" method="post">
+                    @csrf
+                    <div><strong>Akses akun</strong><span>Masuk sementara sebagai pengguna untuk memeriksa pengalaman mereka.</span></div>
+                    <button class="portal-small-button" id="accountAccessButton" type="submit">Masuk sebagai pengguna</button>
+                </form>
+                <div class="account-management-danger">
+                    <div><strong>Hapus akun</strong><span>Tindakan ini permanen. Riwayat pesanan pelanggan tetap disimpan.</span></div>
+                    <button class="account-delete-trigger" id="accountDeleteTrigger" type="button">Hapus akun</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="account-delete-modal" id="accountDeleteModal" hidden>
+        <section class="account-delete-dialog" role="alertdialog" aria-modal="true" aria-labelledby="accountDeleteTitle" aria-describedby="accountDeleteMessage">
+            <p class="portal-eyebrow">Konfirmasi tindakan permanen</p>
+            <h2 id="accountDeleteTitle">Hapus akun ini?</h2>
+            <p id="accountDeleteMessage">Akun akan dihapus. Riwayat transaksi pelanggan tetap dipertahankan.</p>
+            <div class="account-delete-actions">
+                <button class="portal-small-button" id="accountDeleteCancel" type="button">Batal</button>
+                <form id="accountDeleteForm" method="post">
+                    @csrf
+                    @method('DELETE')
+                    <button class="account-delete-trigger" type="submit">Hapus permanen</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
     <script>
         (() => {
             const form = document.getElementById('accountSearchForm');
@@ -75,9 +128,29 @@
             const historyTitle = document.getElementById('employmentHistoryTitle');
             const historyContent = document.getElementById('employmentHistoryContent');
             const historyClose = document.getElementById('employmentHistoryClose');
+            const accountManagementModal = document.getElementById('accountManagementModal');
+            const accountManagementClose = document.getElementById('accountManagementClose');
+            const accountManagementTitle = document.getElementById('accountManagementTitle');
+            const accountManagementDescription = document.getElementById('accountManagementDescription');
+            const accountRoleForm = document.getElementById('accountRoleForm');
+            const accountRoleSelect = document.getElementById('accountRoleSelect');
+            const accountRoleNoteField = document.getElementById('accountRoleNoteField');
+            const accountManagementEmployment = document.getElementById('accountManagementEmployment');
+            const accountEmploymentForm = document.getElementById('accountEmploymentForm');
+            const accountEmploymentNote = accountEmploymentForm.querySelector('textarea');
+            const accountEmploymentNoteLabel = document.getElementById('accountEmploymentNoteLabel');
+            const accountEmploymentButton = document.getElementById('accountEmploymentButton');
+            const accountAccessForm = document.getElementById('accountAccessForm');
+            const accountAccessButton = document.getElementById('accountAccessButton');
+            const accountDeleteModal = document.getElementById('accountDeleteModal');
+            const accountDeleteForm = document.getElementById('accountDeleteForm');
+            const accountDeleteMessage = document.getElementById('accountDeleteMessage');
+            const accountDeleteTrigger = document.getElementById('accountDeleteTrigger');
+            const accountDeleteCancel = document.getElementById('accountDeleteCancel');
             let searchTimer;
             let activeSearch;
             let historyTrigger;
+            let accountManagementTrigger;
 
             const closeHistory = () => {
                 historyModal.hidden = true;
@@ -100,6 +173,49 @@
                 historyModal.hidden = false;
                 document.body.classList.add('employment-history-open');
                 historyClose.focus();
+            };
+
+            const closeAccountManagement = () => {
+                accountManagementModal.hidden = true;
+                document.body.classList.remove('employment-history-open');
+                accountManagementTrigger?.focus();
+            };
+
+            const openAccountManagement = (button) => {
+                accountManagementTrigger = button;
+                accountManagementTitle.textContent = `Kelola · ${button.dataset.userName}`;
+                accountManagementDescription.textContent = `${button.dataset.userEmail} · ${button.dataset.userActive === 'true' ? 'Aktif' : 'Nonaktif'}`;
+                accountRoleForm.action = button.dataset.roleUrl;
+                accountRoleSelect.value = button.dataset.userRole;
+                accountRoleNoteField.hidden = button.dataset.userRole !== 'operator';
+                accountRoleNoteField.querySelector('textarea').value = '';
+                accountManagementEmployment.hidden = button.dataset.userRole !== 'operator';
+                accountEmploymentForm.action = button.dataset.userActive === 'true'
+                    ? button.dataset.dismissUrl
+                    : button.dataset.rehireUrl;
+                accountEmploymentNote.value = '';
+                accountEmploymentNoteLabel.textContent = button.dataset.userActive === 'true'
+                    ? 'Alasan pemberhentian wajib'
+                    : 'Catatan pengaktifan kembali wajib';
+                accountEmploymentButton.textContent = button.dataset.userActive === 'true'
+                    ? 'Simpan pemberhentian'
+                    : 'Aktifkan kembali';
+                accountAccessForm.action = button.dataset.accessUrl;
+                accountAccessButton.disabled = button.dataset.userRole === 'admin' || button.dataset.userActive !== 'true';
+                accountAccessButton.title = accountAccessButton.disabled
+                    ? 'Hanya akun aktif non-administrator yang dapat diakses.'
+                    : '';
+                accountDeleteForm.action = button.dataset.deleteUrl;
+                accountDeleteMessage.textContent = `Akun ${button.dataset.userName} akan dihapus. Riwayat transaksi pelanggan tetap dipertahankan.`;
+                accountManagementModal.hidden = false;
+                document.body.classList.add('employment-history-open');
+                accountManagementClose.focus();
+            };
+
+            const closeDeleteConfirmation = () => {
+                accountDeleteModal.hidden = true;
+                accountManagementModal.hidden = false;
+                accountDeleteTrigger.focus();
             };
 
             const updateResults = async (url) => {
@@ -179,6 +295,13 @@
             });
 
             document.addEventListener('click', (event) => {
+                const managementButton = event.target.closest('[data-open-account-management]');
+
+                if (managementButton) {
+                    openAccountManagement(managementButton);
+                    return;
+                }
+
                 const historyButton = event.target.closest('[data-open-employment-history]');
 
                 if (historyButton) {
@@ -195,6 +318,26 @@
             });
 
             historyClose.addEventListener('click', closeHistory);
+            accountManagementClose.addEventListener('click', closeAccountManagement);
+            accountManagementModal.addEventListener('click', (event) => {
+                if (event.target === accountManagementModal) {
+                    closeAccountManagement();
+                }
+            });
+            accountRoleSelect.addEventListener('change', () => {
+                accountRoleNoteField.hidden = accountRoleSelect.value !== 'operator';
+            });
+            accountDeleteTrigger.addEventListener('click', () => {
+                accountManagementModal.hidden = true;
+                accountDeleteModal.hidden = false;
+                accountDeleteCancel.focus();
+            });
+            accountDeleteCancel.addEventListener('click', closeDeleteConfirmation);
+            accountDeleteModal.addEventListener('click', (event) => {
+                if (event.target === accountDeleteModal) {
+                    closeDeleteConfirmation();
+                }
+            });
             historyModal.addEventListener('click', (event) => {
                 if (event.target === historyModal) {
                     closeHistory();
@@ -204,7 +347,15 @@
                 if (event.key === 'Escape' && !historyModal.hidden) {
                     closeHistory();
                 }
+
+                if (event.key === 'Escape' && !accountDeleteModal.hidden) {
+                    closeDeleteConfirmation();
+                } else if (event.key === 'Escape' && !accountManagementModal.hidden) {
+                    closeAccountManagement();
+                }
             });
+
+            accountRoleSelect.dispatchEvent(new Event('change'));
 
             window.addEventListener('popstate', () => {
                 const url = new URL(window.location.href);

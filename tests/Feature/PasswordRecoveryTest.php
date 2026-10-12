@@ -318,12 +318,23 @@ class PasswordRecoveryTest extends TestCase
             'status' => PasswordRecoveryRequest::STATUS_PENDING,
         ]);
 
-        $this->actingAs($admin)
+        $this->from(route('users.password-recovery.index'))
+            ->actingAs($admin)
             ->post(route('users.password-recovery.approve', $recoveryRequest))
-            ->assertSessionHasErrors('recovery');
+            ->assertRedirectToRoute('users.password-recovery.index')
+            ->assertSessionHas(
+                'error',
+                'Email reset gagal dikirim. Permintaan dikembalikan ke status menunggu; pastikan layanan SMTP aktif dan coba lagi.',
+            );
 
         $this->assertSame(PasswordRecoveryRequest::STATUS_PENDING, $recoveryRequest->refresh()->status);
         $this->assertDatabaseCount('password_reset_tokens', 0);
+
+        $this->get(route('users.password-recovery.index'))
+            ->assertOk()
+            ->assertSee('Tindakan tidak berhasil.')
+            ->assertSee('Email reset gagal dikirim. Permintaan dikembalikan ke status menunggu; pastikan layanan SMTP aktif dan coba lagi.')
+            ->assertDontSee('Periksa kembali data yang dimasukkan.');
     }
 
     public function test_customer_cannot_reset_password_before_admin_approval(): void

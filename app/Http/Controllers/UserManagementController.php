@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -86,6 +87,154 @@ class UserManagementController extends Controller
                 ? 'Akun karyawan berhasil direkrut dan catatan awal disimpan.'
                 : 'Akun berhasil dibuat.',
         );
+    }
+
+    public function updateRole(Request $request, User $user): RedirectResponse
+    {
+        if ($user->is($request->user())) {
+            return back()->withErrors(['user' => 'Anda tidak dapat mengubah peran akun sendiri.']);
+        }
+
+        $validated = $request->validate([
+            'role' => ['required', Rule::in([
+                User::ROLE_CUSTOMER,
+                User::ROLE_OPERATOR,
+                User::ROLE_OWNER,
+                User::ROLE_ADMIN,
+            ])],
+            'note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $result = DB::transaction(function () use ($request, $user, $validated): string {
+            $account = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($account->role === $validated['role']) {
+                return 'unchanged';
+            }
+
+            if ($account->role === User::ROLE_ADMIN && $account->is_active && $validated['role'] !== User::ROLE_ADMIN) {
+                $activeAdmins = User::query()
+                    ->where('role', User::ROLE_ADMIN)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($activeAdmins->count() <= 1) {
+                    return 'last_admin';
+                }
+            }
+
+            $previousRole = $account->role;
+            $account->update(['role' => $validated['role']]);
+
+            if ($previousRole === User::ROLE_OPERATOR || $validated['role'] === User::ROLE_OPERATOR) {
+                $account->employmentEvents()->create([
+                    'actor_id' => $request->user()->id,
+                    'action' => 'role_changed',
+                    'note' => $validated['note'] ?? null,
+                ]);
+            }
+
+            return 'updated';
+        });
+
+        if ($result === 'last_admin') {
+            return back()->withErrors(['user' => 'Setidaknya satu administrator harus tetap aktif.']);
+        }
+
+        return redirect()->route('users.index')->with(
+            'status',
+            $result === 'unchanged' ? 'Peran akun tidak berubah.' : 'Peran akun berhasil diperbarui.',
+        );
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        $result = DB::transaction(function () use ($request, $user): string {
+            $account = User::query()->lockForUpdate()->findOrFail($user->id);
+
+            if ($account->is($request->user())) {
+                return 'current_user';
+            }
+
+            if ($account->employmentEvents()->exists()) {
+                return 'employment_history';
+            }
+
+            if ($account->role === User::ROLE_ADMIN && $account->is_active) {
+                $activeAdmins = User::query()
+                    ->where('role', User::ROLE_ADMIN)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->get();
+
+                if ($activeAdmins->count() <= 1) {
+                    return 'last_admin';
+                }
+            }
+
+            $account->delete();
+
+            return 'deleted';
+        });
+
+        if ($result === 'current_user') {
+            return back()->withErrors(['user' => 'Akun yang sedang digunakan tidak dapat dihapus.']);
+        }
+
+        if ($result === 'employment_history') {
+            return back()->withErrors(['user' => 'Akun dengan riwayat kepegawaian tidak dapat dihapus.']);
+        }
+
+        if ($result === 'last_admin') {
+            return back()->withErrors(['user' => 'Setidaknya satu administrator harus tetap aktif.']);
+        }
+
+        return redirect()->route('users.index')->with('status', 'Akun berhasil dihapus. Riwayat transaksi pelanggan tetap tersimpan.');
+    }
+
+    public function impersonate(Request $request, User $user): RedirectResponse
+    {
+        if ($user->role === User::ROLE_ADMIN || ! $user->is_active) {
+            return back()->withErrors(['user' => 'Akses hanya tersedia untuk akun aktif non-administrator.']);
+        }
+
+        if ($request->session()->has('admin_impersonator_id')) {
+            return back()->withErrors(['user' => 'Akhiri akses akun saat ini sebelum mengakses akun lain.']);
+        }
+
+        $request->session()->put('admin_impersonator_id', $request->user()->id);
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->to($user->role === User::ROLE_CUSTOMER
+            ? route('account.orders.index')
+            : route('dashboard'));
+    }
+
+    public function stopImpersonating(Request $request): RedirectResponse
+    {
+        $adminId = $request->session()->pull('admin_impersonator_id');
+        $admin = $adminId === null
+            ? null
+            : User::query()
+                ->whereKey($adminId)
+                ->where('role', User::ROLE_ADMIN)
+                ->where('is_active', true)
+                ->first();
+
+        if ($admin === null) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login');
+        }
+
+        Auth::login($admin);
+        $request->session()->regenerate();
+
+        return redirect()->route('users.index');
     }
 
     public function toggleActive(Request $request, User $user): RedirectResponse

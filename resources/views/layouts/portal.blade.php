@@ -11,6 +11,15 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="portal-body" @if (auth()->user()->role === 'operator') data-employment-status-url="{{ route('account.employment-status') }}" data-inactive-account-url="{{ route('account.inactive') }}" @endif>
+        @if (session()->has('admin_impersonator_id'))
+            <div class="impersonation-banner">
+                <span>Anda sedang mengakses akun pengguna.</span>
+                <form method="post" action="{{ route('users.impersonate.stop') }}">
+                    @csrf
+                    <button type="submit">Kembali ke administrator</button>
+                </form>
+            </div>
+        @endif
         <div class="portal-shell">
             <aside class="portal-sidebar" id="portalSidebar">
                 <a class="portal-brand" href="{{ route('home') }}">
@@ -77,6 +86,12 @@
                 <main class="portal-main">
                     @if (session('status'))
                         <div class="portal-flash" role="status">{{ session('status') }}</div>
+                    @endif
+                    @if (session('error'))
+                        <div class="portal-errors" role="alert">
+                            <strong>Tindakan tidak berhasil.</strong>
+                            <p>{{ session('error') }}</p>
+                        </div>
                     @endif
                     @if ($errors->any())
                         <div class="portal-errors" role="alert">
@@ -224,5 +239,6 @@
                 });
             });
         </script>
+        <div class="site-toast" id="siteToast" role="status" aria-live="polite"></div>
     </body>
 </html>

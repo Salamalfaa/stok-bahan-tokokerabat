@@ -15,6 +15,15 @@
         @endif
     </head>
     <body>
+        @if (session()->has('admin_impersonator_id'))
+            <div class="impersonation-banner">
+                <span>Anda sedang mengakses akun pengguna.</span>
+                <form method="post" action="{{ route('users.impersonate.stop') }}">
+                    @csrf
+                    <button type="submit">Kembali ke administrator</button>
+                </form>
+            </div>
+        @endif
         <div class="announcement-bar">
             <span>Masak sepenuh hati, disajikan untuk orang tersayang.</span>
             <a href="#menu">Lihat menu hari ini <span aria-hidden="true">&rarr;</span></a>

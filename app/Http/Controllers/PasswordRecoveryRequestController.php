@@ -201,9 +201,10 @@ class PasswordRecoveryRequestController extends Controller
                 $this->reopenRequest($recoveryRequest);
                 report($exception);
 
-                return back()->withErrors([
-                    'recovery' => 'Email reset gagal dikirim. Permintaan dikembalikan ke status menunggu; periksa konfigurasi SMTP lalu coba lagi.',
-                ]);
+                return back()->with(
+                    'error',
+                    'Email reset gagal dikirim. Permintaan dikembalikan ke status menunggu; pastikan layanan SMTP aktif dan coba lagi.',
+                );
             }
 
             event(new PasswordResetLinkSent($user));
@@ -221,7 +222,7 @@ class PasswordRecoveryRequestController extends Controller
             default => 'Permintaan tidak dapat diproses. Periksa kembali akun pengguna.',
         };
 
-        return back()->withErrors(['recovery' => $message]);
+        return back()->with('error', $message);
     }
 
     public function reject(Request $request, PasswordRecoveryRequest $recoveryRequest): RedirectResponse
@@ -251,11 +252,12 @@ class PasswordRecoveryRequestController extends Controller
         });
 
         if ($result !== 'rejected') {
-            return back()->withErrors([
-                'recovery' => $result === 'expired'
+            return back()->with(
+                'error',
+                $result === 'expired'
                     ? 'Permintaan sudah kedaluwarsa.'
                     : 'Permintaan ini sudah diproses.',
-            ]);
+            );
         }
 
         return redirect()->route('users.password-recovery.index')->with('status', 'Permintaan reset ditolak.');

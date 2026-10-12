@@ -103,6 +103,18 @@ Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')-
     Route::get('/akun', [UserManagementController::class, 'index'])
         ->middleware('role:admin')
         ->name('users.index');
+    Route::post('/akun/{user}/akses', [UserManagementController::class, 'impersonate'])
+        ->middleware('role:admin')
+        ->name('users.impersonate.start');
+    Route::patch('/akun/{user}/peran', [UserManagementController::class, 'updateRole'])
+        ->middleware('role:admin')
+        ->name('users.role.update');
+    Route::delete('/akun/notifikasi-reset-sandi', [PasswordRecoveryRequestController::class, 'destroy'])
+        ->middleware('role:admin')
+        ->name('users.password-recovery.destroy');
+    Route::delete('/akun/{user}', [UserManagementController::class, 'destroy'])
+        ->middleware('role:admin')
+        ->name('users.destroy');
     Route::get('/akun/notifikasi-reset-sandi', [PasswordRecoveryRequestController::class, 'index'])
         ->middleware('role:admin')
         ->name('users.password-recovery.index');
@@ -112,9 +124,6 @@ Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')-
     Route::post('/akun/notifikasi-reset-sandi/{recoveryRequest}/tolak', [PasswordRecoveryRequestController::class, 'reject'])
         ->middleware('role:admin')
         ->name('users.password-recovery.reject');
-    Route::delete('/akun/notifikasi-reset-sandi', [PasswordRecoveryRequestController::class, 'destroy'])
-        ->middleware('role:admin')
-        ->name('users.password-recovery.destroy');
     Route::delete('/akun/notifikasi-reset-sandi/{recoveryRequest}', [PasswordRecoveryRequestController::class, 'destroySingle'])
         ->middleware('role:admin')
         ->name('users.password-recovery.destroy-item');
@@ -143,6 +152,10 @@ Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')-
         ->middleware('role:admin')
         ->name('users.rehire');
 });
+
+Route::post('/kembali-ke-administrator', [UserManagementController::class, 'stopImpersonating'])
+    ->middleware('auth')
+    ->name('users.impersonate.stop');
 
 Route::get('/akun/pesanan', [CustomerOrderController::class, 'index'])
     ->middleware(['auth', 'role:customer'])

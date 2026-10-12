@@ -3238,3 +3238,262 @@ a.portal-metric-note:hover,
 .employment-history-dialog-content .employment-event-card {
     padding: 13px 3px;
 }
+
+.account-management-modal[hidden],
+.account-delete-modal[hidden] {
+    display: none;
+}
+
+.account-management-modal,
+.account-delete-modal {
+    position: fixed;
+    z-index: 110;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: 18px;
+    background: rgba(18, 39, 33, 0.62);
+    backdrop-filter: blur(4px);
+}
+
+.account-management-dialog {
+    width: min(620px, 100%);
+    max-height: min(720px, calc(100dvh - 36px));
+    overflow-y: auto;
+    border: 1px solid var(--portal-line);
+    border-top: 3px solid var(--portal-green);
+    border-radius: 4px;
+    background: var(--portal-white);
+    box-shadow: 0 24px 70px rgba(12, 30, 25, 0.24);
+    animation: portal-arrive 220ms ease-out both;
+}
+
+.account-management-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--portal-line);
+}
+
+.account-management-heading .portal-eyebrow,
+.account-management-heading h2,
+.account-management-heading p:last-child {
+    margin: 0;
+}
+
+.account-management-heading h2,
+.account-delete-dialog h2 {
+    color: var(--portal-ink);
+    font-family: var(--portal-display);
+    font-size: 22px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.account-management-heading p:last-child {
+    margin-top: 5px;
+    color: var(--portal-muted);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.account-management-content {
+    display: grid;
+    gap: 0;
+    padding: 0 20px;
+}
+
+.account-management-role,
+.account-management-access,
+.account-management-danger {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr);
+    align-items: center;
+    gap: 12px 18px;
+    padding: 17px 0;
+    border-bottom: 1px solid var(--portal-line);
+}
+
+.account-management-role > div,
+.account-management-access > div,
+.account-management-danger > div {
+    display: grid;
+    gap: 3px;
+}
+
+.account-management-role strong,
+.account-management-access strong,
+.account-management-danger strong {
+    color: var(--portal-ink);
+    font-size: 13px;
+}
+
+.account-management-role span,
+.account-management-access span,
+.account-management-danger span {
+    color: var(--portal-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.account-management-role .portal-field {
+    grid-column: 2;
+}
+
+.account-management-role > .portal-primary-button {
+    grid-column: 2;
+    justify-self: start;
+}
+
+.account-management-access {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.account-management-role [hidden] {
+    display: none;
+}
+
+.account-management-employment[hidden] {
+    display: none;
+}
+
+.account-management-employment {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 0.8fr);
+    align-items: center;
+    gap: 12px 18px;
+    padding: 17px 0;
+    border-bottom: 1px solid var(--portal-line);
+}
+
+.account-management-employment > div {
+    display: grid;
+    gap: 3px;
+}
+
+.account-management-employment > div strong {
+    color: var(--portal-ink);
+    font-size: 13px;
+}
+
+.account-management-employment > div span {
+    color: var(--portal-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.account-management-employment form {
+    display: grid;
+    gap: 10px;
+}
+
+.account-management-employment form > button {
+    justify-self: start;
+}
+
+.account-management-danger {
+    grid-template-columns: minmax(0, 1fr) auto;
+    border-bottom: 0;
+}
+
+.account-delete-trigger {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid #a33c31;
+    border-radius: 3px;
+    color: #a33c31;
+    background: #fff9f6;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.account-delete-trigger:hover {
+    color: #fff;
+    background: #a33c31;
+}
+
+.account-delete-dialog {
+    width: min(420px, 100%);
+    padding: 22px;
+    border-top: 3px solid #a33c31;
+    border-radius: 4px;
+    background: var(--portal-white);
+    box-shadow: 0 24px 70px rgba(12, 30, 25, 0.24);
+    animation: portal-arrive 180ms ease-out both;
+}
+
+.account-delete-dialog .portal-eyebrow {
+    margin: 0 0 5px;
+    color: #a33c31;
+}
+
+.account-delete-dialog h2 {
+    margin: 0;
+}
+
+.account-delete-dialog > p:not(.portal-eyebrow) {
+    color: var(--portal-muted);
+    font-size: 13px;
+}
+
+.account-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.account-delete-actions form {
+    display: flex;
+}
+
+.impersonation-banner {
+    position: relative;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px;
+    color: #fffefa;
+    background: #183a35;
+    font-size: 12px;
+}
+
+.impersonation-banner form {
+    margin: 0;
+}
+
+.impersonation-banner button {
+    padding: 5px 9px;
+    border: 1px solid rgba(255, 254, 250, 0.55);
+    border-radius: 2px;
+    color: #fffefa;
+    background: transparent;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.impersonation-banner button:hover {
+    color: #183a35;
+    background: #fffefa;
+}
+
+@media (max-width: 560px) {
+    .account-management-heading { padding: 15px; }
+    .account-management-content { padding-inline: 15px; }
+    .account-management-role,
+    .account-management-employment,
+    .account-management-access,
+    .account-management-danger { grid-template-columns: minmax(0, 1fr); }
+    .account-management-role .portal-field,
+    .account-management-role > .portal-primary-button { grid-column: 1; }
+    .account-management-access > button,
+    .account-management-danger > button { justify-self: start; }
+    .impersonation-banner { align-items: flex-start; flex-direction: column; gap: 5px; }
+}

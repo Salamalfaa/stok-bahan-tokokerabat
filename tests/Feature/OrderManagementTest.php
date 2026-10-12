@@ -78,6 +78,7 @@ class OrderManagementTest extends TestCase
 
     public function test_archive_requires_a_valid_date_not_in_the_future(): void
     {
+        $this->travelTo('2026-09-28 12:00:00');
         $operator = User::factory()->create(['role' => User::ROLE_OPERATOR]);
 
         $this->actingAs($operator)

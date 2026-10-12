@@ -402,6 +402,10 @@ class AccountAccessTest extends TestCase
             ->assertSee('Catatan perekrutan')
             ->assertSee('Pemberhentian')
             ->assertSee('employmentHistoryModal', false)
+            ->assertSee('accountManagementModal', false)
+            ->assertSee('data-open-account-management', false)
+            ->assertSee('Masuk sebagai pengguna')
+            ->assertSee('accountDeleteModal', false)
             ->assertSee('data-open-employment-history', false)
             ->assertSee('Mulai kerja 🎉');
     }
@@ -477,5 +481,132 @@ class AccountAccessTest extends TestCase
             ->assertOk()
             ->assertSee('TK-OWN-ORDER')
             ->assertDontSee('TK-OTHER-ORDER');
+    }
+
+    public function test_admin_can_change_an_existing_users_role_and_records_operator_history(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $user = User::factory()->create(['role' => User::ROLE_CUSTOMER]);
+
+        $this->actingAs($admin)->patch(route('users.role.update', $user), [
+            'role' => User::ROLE_OPERATOR,
+            'note' => 'Mulai bertugas di kasir.',
+        ])->assertRedirectToRoute('users.index');
+
+        $this->assertSame(User::ROLE_OPERATOR, $user->refresh()->role);
+        $this->assertDatabaseHas('employment_events', [
+            'user_id' => $user->id,
+            'actor_id' => $admin->id,
+            'action' => 'role_changed',
+            'note' => 'Mulai bertugas di kasir.',
+        ]);
+    }
+
+    public function test_admin_cannot_change_their_own_role_but_can_update_another_admin(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $this->actingAs($admin)->patch(route('users.role.update', $admin), [
+            'role' => User::ROLE_CUSTOMER,
+        ])->assertSessionHasErrors('user');
+
+        $this->assertSame(User::ROLE_ADMIN, $admin->refresh()->role);
+
+        $anotherAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $this->patch(route('users.role.update', $anotherAdmin), [
+            'role' => User::ROLE_OWNER,
+        ])->assertRedirectToRoute('users.index');
+
+        $this->assertSame(User::ROLE_OWNER, $anotherAdmin->refresh()->role);
+    }
+
+    public function test_admin_can_delete_a_customer_without_deleting_their_order_history(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $user = User::factory()->create(['role' => User::ROLE_CUSTOMER]);
+        $customer = Customer::factory()->create(['user_id' => $user->id]);
+        Pesanan::factory()->for($customer)->create(['kode_pesanan' => 'TK-KEPT-ORDER']);
+
+        $this->actingAs($admin)->delete(route('users.destroy', $user))
+            ->assertRedirectToRoute('users.index');
+
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+        $this->assertDatabaseHas('customers', [
+            'id' => $customer->id,
+            'user_id' => null,
+        ]);
+        $this->assertDatabaseHas('pesanans', ['kode_pesanan' => 'TK-KEPT-ORDER']);
+    }
+
+    public function test_admin_cannot_delete_their_own_account_or_a_user_with_employment_audit(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $employee = User::factory()->create(['role' => User::ROLE_OPERATOR]);
+        $employee->employmentEvents()->create([
+            'actor_id' => $admin->id,
+            'action' => 'hired',
+            'note' => 'Riwayat kerja.',
+        ]);
+
+        $this->actingAs($admin)->delete(route('users.destroy', $admin))
+            ->assertSessionHasErrors('user');
+        $this->delete(route('users.destroy', $employee))
+            ->assertSessionHasErrors('user');
+
+        $this->assertModelExists($admin);
+        $this->assertModelExists($employee);
+        $this->assertDatabaseHas('employment_events', ['user_id' => $employee->id]);
+    }
+
+    public function test_admin_can_access_and_restore_their_account_session(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $customer = User::factory()->create(['role' => User::ROLE_CUSTOMER]);
+
+        $this->actingAs($admin)->post(route('users.impersonate.start', $customer))
+            ->assertRedirectToRoute('account.orders.index');
+
+        $this->assertAuthenticatedAs($customer);
+        $this->get(route('account.orders.index'))
+            ->assertOk()
+            ->assertSee('Kembali ke administrator')
+            ->assertSee(route('users.impersonate.stop'), false);
+
+        $this->post(route('users.impersonate.stop'))->assertRedirectToRoute('users.index');
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_admin_cannot_access_admin_or_inactive_accounts_as_another_user(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $anotherAdmin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $inactiveUser = User::factory()->create([
+            'role' => User::ROLE_CUSTOMER,
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('users.impersonate.start', $anotherAdmin))
+            ->assertSessionHasErrors('user');
+        $this->post(route('users.impersonate.start', $inactiveUser))
+            ->assertSessionHasErrors('user');
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_non_admin_cannot_change_roles_delete_accounts_or_access_another_account(): void
+    {
+        $operator = User::factory()->create(['role' => User::ROLE_OPERATOR]);
+        $customer = User::factory()->create(['role' => User::ROLE_CUSTOMER]);
+
+        $this->actingAs($operator)
+            ->patch(route('users.role.update', $customer), ['role' => User::ROLE_OWNER])
+            ->assertForbidden();
+        $this->delete(route('users.destroy', $customer))->assertForbidden();
+        $this->post(route('users.impersonate.start', $customer))->assertForbidden();
+
+        $this->assertSame(User::ROLE_CUSTOMER, $customer->refresh()->role);
+        $this->assertModelExists($customer);
     }
 }
