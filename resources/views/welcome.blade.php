@@ -352,5 +352,6 @@
         </aside>
 
         <div class="site-toast" id="siteToast" role="status" aria-live="polite"></div>
+        @include('components.voice-announcement-popup')
     </body>
 </html>

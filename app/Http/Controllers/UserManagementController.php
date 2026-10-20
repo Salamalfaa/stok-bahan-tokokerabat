@@ -157,7 +157,11 @@ class UserManagementController extends Controller
                 return 'current_user';
             }
 
-            if ($account->employmentEvents()->exists()) {
+            if (
+                $account->employmentEvents()->exists()
+                || $account->attendanceRecords()->exists()
+                || $account->disciplinaryActions()->exists()
+            ) {
                 return 'employment_history';
             }
 

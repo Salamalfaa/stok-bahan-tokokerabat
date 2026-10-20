@@ -1,3 +1,5 @@
+import './voice-announcements.js';
+
 const cartDrawer = document.querySelector('#cartDrawer');
 const cartItemsElement = document.querySelector('#cartItems');
 const cartCountElement = document.querySelector('#cartCount');

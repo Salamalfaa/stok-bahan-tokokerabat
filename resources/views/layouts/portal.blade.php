@@ -9,6 +9,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('styles')
     </head>
     <body class="portal-body" @if (auth()->user()->role === 'operator') data-employment-status-url="{{ route('account.employment-status') }}" data-inactive-account-url="{{ route('account.inactive') }}" @endif>
         @if (session()->has('admin_impersonator_id'))
@@ -30,6 +31,10 @@
                 <p class="portal-nav-label">OPERASIONAL</p>
                 <nav class="portal-nav" aria-label="Navigasi ruang kerja">
                     <a href="{{ route('dashboard') }}" @class(['is-current' => request()->routeIs('dashboard')])>Ringkasan</a>
+                    @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
+                        <a href="{{ route('voice-announcements.index') }}" @class(['is-current' => request()->routeIs('voice-announcements.*')])>Panggilan suara</a>
+                        <a href="{{ route('attendance.index') }}" @class(['is-current' => request()->routeIs('attendance.*')])>Absensi karyawan</a>
+                    @endif
                     @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
                         <a href="{{ route('reservations.index') }}" @class(['is-current' => request()->routeIs('reservations.*')])>Reservasi</a>
                     @endif
@@ -239,6 +244,8 @@
                 });
             });
         </script>
+        @stack('scripts')
         <div class="site-toast" id="siteToast" role="status" aria-live="polite"></div>
+        @include('components.voice-announcement-popup')
     </body>
 </html>

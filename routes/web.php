@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\DashboardController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\VoiceAnnouncementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [StorefrontController::class, 'index'])->name('home');
@@ -22,6 +24,12 @@ Route::post('/reservasi', [StorefrontController::class, 'storeReservation'])
 Route::post('/pesanan', [StorefrontController::class, 'storeOrder'])
     ->middleware('throttle:10,1')
     ->name('pesanans.store');
+Route::get('/pengumuman-suara/aktif', [VoiceAnnouncementController::class, 'publicState'])
+    ->middleware('throttle:45,1')
+    ->name('voice-announcements.public-state');
+Route::get('/pengumuman-suara/aktif/audio', [VoiceAnnouncementController::class, 'publicAudio'])
+    ->middleware('throttle:20,1')
+    ->name('voice-announcements.public-audio');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/masuk', [AuthController::class, 'createLogin'])->name('login');
@@ -58,6 +66,32 @@ Route::middleware(['auth', 'role:customer,operator,owner,admin'])->prefix('profi
 
 Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::middleware('role:operator,admin')->prefix('/pengumuman-suara')->name('voice-announcements.')->group(function (): void {
+        Route::get('/', [VoiceAnnouncementController::class, 'index'])->name('index');
+        Route::post('/', [VoiceAnnouncementController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::post('/{voiceAnnouncement}/putar', [VoiceAnnouncementController::class, 'broadcast'])->name('broadcast');
+        Route::post('/hentikan', [VoiceAnnouncementController::class, 'stop'])->name('stop');
+        Route::get('/{voiceAnnouncement}/audio', [VoiceAnnouncementController::class, 'audio'])->name('audio');
+        Route::delete('/{voiceAnnouncement}', [VoiceAnnouncementController::class, 'destroy'])->name('destroy');
+    });
+    Route::get('/absensi', [AttendanceController::class, 'index'])
+        ->middleware('role:operator,admin')
+        ->name('attendance.index');
+    Route::get('/absensi/karyawan/{user}/rekap', [AttendanceController::class, 'employeeReport'])
+        ->middleware('role:admin')
+        ->name('attendance.employees.report');
+    Route::get('/absensi/karyawan/{user}/rekap/unduh', [AttendanceController::class, 'exportEmployeeReport'])
+        ->middleware('role:admin')
+        ->name('attendance.employees.report.export');
+    Route::post('/absensi', [AttendanceController::class, 'storeAttendance'])
+        ->middleware('role:admin')
+        ->name('attendance.store');
+    Route::post('/absensi/sanksi', [AttendanceController::class, 'storeDisciplinaryAction'])
+        ->middleware('role:admin')
+        ->name('attendance.sanctions.store');
+    Route::post('/absensi/sanksi/{disciplinaryAction}/kirim', [AttendanceController::class, 'resendWarningLetter'])
+        ->middleware('role:admin')
+        ->name('attendance.warnings.send');
     Route::get('/reservasi', [DashboardController::class, 'reservations'])
         ->middleware('role:operator,admin')
         ->name('reservations.index');

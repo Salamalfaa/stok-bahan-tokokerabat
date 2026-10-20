@@ -49,6 +49,22 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<AttendanceRecord, $this>
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
+    /**
+     * @return HasMany<DisciplinaryAction, $this>
+     */
+    public function disciplinaryActions(): HasMany
+    {
+        return $this->hasMany(DisciplinaryAction::class);
+    }
+
+    /**
      * @return HasMany<PasswordRecoveryRequest, $this>
      */
     public function passwordRecoveryRequests(): HasMany
