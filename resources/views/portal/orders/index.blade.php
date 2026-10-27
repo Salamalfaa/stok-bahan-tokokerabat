@@ -5,9 +5,10 @@
 
 @section('content')
     <div class="portal-page-heading">
-        <div><p class="portal-eyebrow">Layanan harian</p><h1>Pesanan masuk.</h1><p class="portal-heading-copy">Periksa detail, lalu perbarui status pesanan.</p></div>
+        <div><p class="portal-eyebrow">Layanan harian</p><h1>Pesanan masuk.</h1><p class="portal-heading-copy">Tandai pesanan selesai untuk menyiarkan panggilan otomatis selama 24 jam.</p></div>
         <div class="portal-heading-actions order-page-actions">
             <span class="portal-total-label">{{ $orders->total() }} pesanan aktif</span>
+            <a class="portal-secondary-button" href="{{ route('voice-announcements.index') }}">Panggilan suara</a>
             <form class="order-archive-picker" method="get" action="{{ route('orders.archive') }}">
                 <label class="order-calendar-field" for="activeArchiveDate">
                     <span class="order-calendar-icon" aria-hidden="true"></span>

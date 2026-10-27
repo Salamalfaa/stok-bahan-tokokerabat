@@ -22,38 +22,41 @@
             </div>
         @endif
         <div class="portal-shell">
-            <aside class="portal-sidebar" id="portalSidebar">
+            <aside @class(['portal-sidebar', 'portal-sidebar-admin' => auth()->user()->role === 'admin']) id="portalSidebar">
                 <a class="portal-brand" href="{{ route('home') }}">
                     <span class="portal-brand-mark">TK</span>
                     <span><strong>Toko Kerabat</strong><small>RUANG KERJA</small></span>
                 </a>
 
                 <p class="portal-nav-label">OPERASIONAL</p>
-                <nav class="portal-nav" aria-label="Navigasi ruang kerja">
-                    <a href="{{ route('dashboard') }}" @class(['is-current' => request()->routeIs('dashboard')])>Ringkasan</a>
-                    @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
-                        <a href="{{ route('voice-announcements.index') }}" @class(['is-current' => request()->routeIs('voice-announcements.*')])>Panggilan suara</a>
-                        <a href="{{ route('attendance.index') }}" @class(['is-current' => request()->routeIs('attendance.*')])>Absensi karyawan</a>
-                    @endif
-                    @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
-                        <a href="{{ route('reservations.index') }}" @class(['is-current' => request()->routeIs('reservations.*')])>Reservasi</a>
-                    @endif
-                    @if (in_array(auth()->user()->role, ['owner', 'admin'], true))
-                        <a href="{{ route('inventory.index') }}" @class(['is-current' => request()->routeIs('inventory.*', 'stock-movements.*')])>Persediaan</a>
-                    @endif
-                    @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
-                        <a href="{{ route('orders.index') }}" @class(['is-current' => request()->routeIs('orders.*')])>Pesanan masuk</a>
-                    @endif
-                    @if (in_array(auth()->user()->role, ['owner', 'admin'], true))
-                        <a href="{{ route('reports.index') }}" @class(['is-current' => request()->routeIs('reports.*')])>Laporan</a>
-                    @endif
-                    @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
-                        <a href="{{ route('menus.index') }}" @class(['is-current' => request()->routeIs('menus.*')])>Menu toko</a>
-                    @endif
-                    @if (auth()->user()->role === 'admin')
-                        <a href="{{ route('users.index') }}" @class(['is-current' => request()->routeIs('users.*')])>Pengguna</a>
-                    @endif
-                </nav>
+                <div class="portal-sidebar-navigation" data-sidebar-navigation>
+                    <nav class="portal-nav" aria-label="Navigasi ruang kerja">
+                        <a href="{{ route('dashboard') }}" @class(['is-current' => request()->routeIs('dashboard')])>Ringkasan</a>
+                        @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
+                            <a href="{{ route('voice-announcements.index') }}" @class(['is-current' => request()->routeIs('voice-announcements.*')])>Panggilan suara</a>
+                            <a href="{{ route('attendance.index') }}" @class(['is-current' => request()->routeIs('attendance.*')])>Absensi karyawan</a>
+                        @endif
+                        @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
+                            <a href="{{ route('reservations.index') }}" @class(['is-current' => request()->routeIs('reservations.*')])>Reservasi</a>
+                        @endif
+                        @if (in_array(auth()->user()->role, ['owner', 'admin'], true))
+                            <a href="{{ route('inventory.index') }}" @class(['is-current' => request()->routeIs('inventory.*', 'stock-movements.*')])>Persediaan</a>
+                        @endif
+                        @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
+                            <a href="{{ route('orders.index') }}" @class(['is-current' => request()->routeIs('orders.*')])>Pesanan masuk</a>
+                        @endif
+                        @if (in_array(auth()->user()->role, ['owner', 'admin'], true))
+                            <a href="{{ route('reports.index') }}" @class(['is-current' => request()->routeIs('reports.index')])>Laporan</a>
+                            <a href="{{ route('reports.debit-credit') }}" @class(['is-current' => request()->routeIs('reports.debit-credit*')])>Debit &amp; Kredit</a>
+                        @endif
+                        @if (in_array(auth()->user()->role, ['operator', 'admin'], true))
+                            <a href="{{ route('menus.index') }}" @class(['is-current' => request()->routeIs('menus.*')])>Menu toko</a>
+                        @endif
+                        @if (auth()->user()->role === 'admin')
+                            <a href="{{ route('users.index') }}" @class(['is-current' => request()->routeIs('users.*')])>Pengguna</a>
+                        @endif
+                    </nav>
+                </div>
 
                 <div class="portal-sidebar-bottom">
                     <a class="portal-store-link" href="{{ route('home') }}">Lihat halaman toko <span aria-hidden="true">&rarr;</span></a>

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pesanan;
+use App\Models\VoiceAnnouncement;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -116,7 +118,32 @@ class OrderManagementController extends Controller
             'status' => ['required', Rule::in(['menunggu', 'diproses', 'selesai', 'dibatalkan'])],
         ]);
 
-        $pesanan->update(['status' => $validated['status']]);
+        $wasCompleted = $pesanan->status === 'selesai';
+        $createdBy = $request->user()->id;
+
+        DB::transaction(function () use ($pesanan, $validated, $wasCompleted, $createdBy): void {
+            $pesanan->update(['status' => $validated['status']]);
+
+            if ($wasCompleted || $validated['status'] !== 'selesai') {
+                return;
+            }
+
+            $startedAt = now();
+            VoiceAnnouncement::query()->where('is_playing', true)->update(['is_playing' => false]);
+            VoiceAnnouncement::query()->updateOrCreate(
+                ['order_id' => $pesanan->id],
+                [
+                    'title' => 'Pesanan '.$pesanan->kode_pesanan.' selesai',
+                    'message' => 'Perhatian, pesanan dengan kode '.$pesanan->kode_pesanan.' sudah selesai dan siap diambil. Terima kasih.',
+                    'audio_path' => null,
+                    'duration_seconds' => 30,
+                    'created_by' => $createdBy,
+                    'started_at' => $startedAt,
+                    'expires_at' => $startedAt->copy()->addDay(),
+                    'is_playing' => true,
+                ],
+            );
+        });
 
         return redirect()->route('orders.index')->with('status', 'Status pesanan berhasil diperbarui.');
     }

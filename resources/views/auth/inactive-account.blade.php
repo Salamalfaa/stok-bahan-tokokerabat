@@ -8,7 +8,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
-        @vite(['resources/css/app.css'])
+        @vite(['resources/css/app.css', 'resources/js/voice-announcements.js'])
     </head>
     <body class="auth-body inactive-account-body">
         <main class="inactive-account-shell">
@@ -31,5 +31,6 @@
                 </form>
             </section>
         </main>
+        @include('components.voice-announcement-popup')
     </body>
 </html>

@@ -4,6 +4,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DebitCreditReportController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\InactiveAccountController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\MenuManagementController;
@@ -68,7 +70,7 @@ Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')-
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::middleware('role:operator,admin')->prefix('/pengumuman-suara')->name('voice-announcements.')->group(function (): void {
         Route::get('/', [VoiceAnnouncementController::class, 'index'])->name('index');
-        Route::post('/', [VoiceAnnouncementController::class, 'store'])->middleware('throttle:10,1')->name('store');
+        Route::post('/', [VoiceAnnouncementController::class, 'store'])->middleware('throttle:voice-recordings')->name('store');
         Route::post('/{voiceAnnouncement}/putar', [VoiceAnnouncementController::class, 'broadcast'])->name('broadcast');
         Route::post('/hentikan', [VoiceAnnouncementController::class, 'stop'])->name('stop');
         Route::get('/{voiceAnnouncement}/audio', [VoiceAnnouncementController::class, 'audio'])->name('audio');
@@ -104,6 +106,15 @@ Route::middleware(['auth', 'role:owner,operator,admin'])->prefix('ruang-kerja')-
     Route::get('/laporan', [DashboardController::class, 'report'])
         ->middleware('role:owner,admin')
         ->name('reports.index');
+    Route::get('/laporan/debit-kredit', [DebitCreditReportController::class, 'index'])
+        ->middleware('role:owner,admin')
+        ->name('reports.debit-credit');
+    Route::get('/laporan/debit-kredit/ekspor', [DebitCreditReportController::class, 'export'])
+        ->middleware('role:owner,admin')
+        ->name('reports.debit-credit.export');
+    Route::post('/pengeluaran', [ExpenseController::class, 'store'])
+        ->middleware('role:owner,admin')
+        ->name('expenses.store');
     Route::get('/bahan-baku', [InventoryItemController::class, 'index'])
         ->middleware('role:owner,admin')
         ->name('inventory.index');

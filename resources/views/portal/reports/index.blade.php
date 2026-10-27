@@ -13,6 +13,7 @@
                     <a href="{{ route('reports.index', ['days' => $period]) }}" @class(['is-selected' => $days === $period])>{{ $label }}</a>
                 @endforeach
             </div>
+            <a class="portal-secondary-button" href="{{ route('reports.debit-credit') }}">Laporan debit &amp; kredit <span aria-hidden="true">&#8594;</span></a>
             <button class="portal-secondary-button" type="button" onclick="window.print()">Cetak laporan <span aria-hidden="true">&#8599;</span></button>
         </div>
     </div>
